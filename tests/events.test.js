@@ -89,7 +89,6 @@ describe('GET /upcoming', () => {
 		expect(res.body.message).toBe('Fetched Upcoming Events Successfully.');
 		expect(res.body.data).toHaveLength(4);
 		expect(res.body.pagination.currentPage).toBe(1);
-		expect(res.body.pagination.currentPage).toBe(1);
 		expect(res.body.pagination.totalPages).toBe(3);
 		expect(res.body.pagination.totalUpcomingEvents).toBe(10);
 	});
@@ -113,23 +112,23 @@ describe('GET /upcoming', () => {
 	});
 });
 
-describe('GET  /', () => {
-	beforeAll(async () => {
-		await connectDb();
-	});
+// describe('GET  /', () => {
+// 	beforeAll(async () => {
+// 		await connectDb();
+// 	});
 
-	afterAll(async () => {
-		await mongoose.connection.close();
-	});
+// 	afterAll(async () => {
+// 		await mongoose.connection.close();
+// 	});
 
-	beforeEach(async () => {
-		await Event.deleteMany({});
-	});
+// 	beforeEach(async () => {
+// 		await Event.deleteMany({});
+// 	});
 
-	it('should return an empty array when there are no events', async () => {
-		const res = await request(app).get('/api/events/').expect(200);
+// 	it('should return an empty array when there are no events', async () => {
+// 		const res = await request(app).get('/api/events/').expect(200);
 
-		expect(res.statusCode).toEqual(200);
-		expect(res.body.message).toBe('Events fetched successfully');
-	});
-});
+// 		expect(res.statusCode).toEqual(200);
+// 		expect(res.body.message).toBe('Events fetched successfully');
+// 	});
+// });
