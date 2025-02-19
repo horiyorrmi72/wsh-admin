@@ -1,0 +1,3 @@
+## WSH ADMIN SECTION
+ - ##### Admin priviledge to create new events, delete events update events
+ - more features coming soon.....
