@@ -14,6 +14,7 @@ const eventSchema = new Schema(
 			default: 'upcoming',
 		},
 		imagePath: { type: String, trim: true },
+		assetPublicId: { type: String, trim: true },
 	},
 	{ timestamps: true }
 );
