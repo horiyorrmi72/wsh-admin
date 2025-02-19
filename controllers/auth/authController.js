@@ -60,7 +60,7 @@ const signin = async (req, res) => {
 			return res.status(401).json({ message: 'Invalid password' });
 		}
 		const expiryPeriod = '3h';
-		const token = await generateToken({ id: user._id }, expiryPeriod);
+		const token = await generateToken({ id: user._id, role:user.role }, expiryPeriod);
 
 		return res.status(200).json({
 			message: 'logged in successfully',
