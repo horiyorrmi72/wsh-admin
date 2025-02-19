@@ -5,6 +5,7 @@ const { upload } = require('../../utils/uploads/cloudinary');
 const { auth, isAdmin } = require('../auth/authUtils');
 
 router.get('/', events.getEvents);
+router.get('/eventby-id/:id', events.getEventsById);
 router.get('/upcoming-event', events.getUpcomingEvents);
 router.get('/completed-event', events.getCompletedEvents);
 router.post(

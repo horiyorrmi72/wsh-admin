@@ -101,9 +101,9 @@ const removeEvent = async (req, res) => {
 			try {
 				const imagePublicId = deletedEvent.assetPublicId;
 				// console.log(imagePublicId);
-					// .split('/')
-					// .pop()
-					// .split('.')[0];
+				// .split('/')
+				// .pop()
+				// .split('.')[0];
 				await cloudinary.api.delete_resources(imagePublicId);
 			} catch (imageError) {
 				console.error(
@@ -159,6 +159,32 @@ const getEvents = async (req, res) => {
 			.json({ message: 'Error fetching events', error: error.message });
 	}
 };
+
+const getEventsById = async (req, res) => {
+	const { id } = req.params;
+
+	if (!mongoose.Types.ObjectId.isValid(id)) {
+		return res.status(400).json({ message: 'Invalid Event ID' });
+	}
+
+	try {
+		const event = await Event.findById(id);
+
+		if (!event) {
+			return res.status(404).json({ message: 'Event not found' });
+		}
+
+		return res
+			.status(200)
+			.json({ message: 'Event fetched successfully', data: event });
+	} catch (error) {
+		console.error(error.message);
+		return res
+			.status(500)
+			.json({ message: 'Internal server error', error: error.message });
+	}
+};
+
 
 const getUpcomingEvents = async (req, res) => {
 	try {
@@ -261,4 +287,5 @@ module.exports = {
 	createEvent,
 	getUpcomingEvents,
 	getCompletedEvents,
+	getEventsById,
 };
