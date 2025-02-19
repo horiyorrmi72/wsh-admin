@@ -1,3 +1,4 @@
+const { default: mongoose } = require('mongoose');
 const Event = require('../../models/eventModel');
 const { cloudinary } = require('../../utils/uploads/cloudinary');
 
@@ -18,6 +19,8 @@ const createEvent = async (req, res) => {
 		}
 
 		const imageUrl = req.file ? req.file.path : null;
+		const imagePublicId = req.file ? req.file.filename : null;
+		// console.log(req.file)
 
 		const event = new Event({
 			title,
@@ -27,6 +30,7 @@ const createEvent = async (req, res) => {
 			registrationUrl,
 			state: state || 'upcoming',
 			imagePath: imageUrl,
+			assetPublicId: imagePublicId,
 		});
 
 		await event.save();
@@ -45,26 +49,31 @@ const updateEvent = async (req, res) => {
 	const imagePath = req.file ? req.file.path : undefined;
 
 	try {
-		const updateFields = {
-			title,
-			description,
-			startDate,
-			endDate,
-			registrationUrl,
-		};
+		if (!mongoose.Types.ObjectId.isValid(id)) {
+			return res.status(400).json({ message: 'Invalid event ID' });
+		}
+
+		const updateFields = {};
+		if (title) updateFields.title = title;
+		if (description) updateFields.description = description;
+		if (startDate) updateFields.startDate = startDate;
+		if (endDate) updateFields.endDate = endDate;
+		if (registrationUrl) updateFields.registrationUrl = registrationUrl;
 		if (imagePath) updateFields.imagePath = imagePath;
 
 		const updatedEvent = await Event.findByIdAndUpdate(id, updateFields, {
 			new: true,
+			runValidators: true,
 		});
 
 		if (!updatedEvent) {
 			return res.status(404).json({ message: 'Event not found' });
 		}
 
-		return res
-			.status(200)
-			.json({ message: 'Event updated successfully', updatedEvent });
+		return res.status(200).json({
+			message: 'Event updated successfully',
+			event: updatedEvent,
+		});
 	} catch (error) {
 		console.error(error.message);
 		return res
@@ -88,24 +97,23 @@ const removeEvent = async (req, res) => {
 			return res.status(404).json({ message: 'Event not found' });
 		}
 
-		if (deletedEvent.imagePath) {
+		if (deletedEvent.assetPublicId) {
 			try {
-				const imagePublicId = deletedEvent.imagePath
-					.split('/')
-					.pop()
-					.split('.')[0];
-				await cloudinary.v2.destroy(imagePublicId);
+				const imagePublicId = deletedEvent.assetPublicId;
+				// console.log(imagePublicId);
+					// .split('/')
+					// .pop()
+					// .split('.')[0];
+				await cloudinary.api.delete_resources(imagePublicId);
 			} catch (imageError) {
 				console.error(
 					'Error deleting image from Cloudinary:',
 					imageError.message
 				);
-				return res
-					.status(500)
-					.json({
-						message: 'Error deleting image from Cloudinary',
-						error: imageError.message,
-					});
+				return res.status(500).json({
+					message: 'Error deleting image from Cloudinary',
+					error: imageError.message,
+				});
 			}
 		}
 
@@ -199,10 +207,58 @@ const getUpcomingEvents = async (req, res) => {
 	}
 };
 
+const getCompletedEvents = async (req, res) => {
+	try {
+		let page = parseInt(req.query.page) || 1;
+		const limit = parseInt(req.query.limit) || 10;
+
+		if (page < 1) {
+			return res
+				.status(400)
+				.json({ message: 'Invalid page number. Page must be 1 or greater.' });
+		}
+
+		const skip = (page - 1) * limit;
+
+		const completedEvents = await Event.find({
+			startDate: { $lt: Date.now() },
+		})
+			.skip(skip)
+			.limit(limit);
+
+		if (completedEvents.length === 0) {
+			return res
+				.status(404)
+				.json({ message: 'No completed events at the moment.' });
+		}
+
+		const totalCompletedEvents = await Event.countDocuments({
+			startDate: { $lt: Date.now() },
+		});
+
+		return res.status(200).json({
+			message: 'Fetched Upcoming Events Successfully.',
+			data: completedEvents,
+			pagination: {
+				currentPage: page,
+				totalPages: Math.ceil(totalCompletedEvents / limit),
+				total: totalCompletedEvents,
+			},
+		});
+	} catch (error) {
+		console.error(error.message);
+		return res.status(500).json({
+			message: 'An error occurred while fetching upcoming events.',
+			error: error.message,
+		});
+	}
+};
+
 module.exports = {
 	getEvents,
 	removeEvent,
 	updateEvent,
 	createEvent,
 	getUpcomingEvents,
+	getCompletedEvents,
 };
