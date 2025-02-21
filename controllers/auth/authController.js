@@ -44,9 +44,12 @@ const signup = async (req, res) => {
 
 const signin = async (req, res) => {
 	const { email, password } = req.body;
+	// console.log('Received request body:', req.body);
+
 	if (!email || !password) {
-		return res.status(400).json({ message: 'invalid email or password' });
+		return res.status(400).json({ message: 'Invalid email or password' });
 	}
+
 	try {
 		const user = await User.findOne({ email: email }).exec();
 		if (!user) {
@@ -59,15 +62,17 @@ const signin = async (req, res) => {
 		if (!verifyPassword) {
 			return res.status(401).json({ message: 'Invalid password' });
 		}
-		const expiryPeriod = '3h';
-		const token = await generateToken({ id: user._id, role:user.role }, expiryPeriod);
 
-		return res.status(200).json({
-			message: 'logged in successfully',
-			token: token,
-		});
+		const expiryPeriod = '3h';
+		const token = await generateToken(
+			{ id: user._id, role: user.role },
+			expiryPeriod
+		);
+
+		res.cookie('token', token, { httpOnly: true, maxAge: 3 * 60 * 60 * 1000 });
+		return res.redirect('/dashboard');
 	} catch (error) {
-		console.error(error.message);
+		console.error('Error during login:', error.message);
 		return res
 			.status(500)
 			.json({ message: 'Internal Server Error', error: error.message });
