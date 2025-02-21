@@ -207,8 +207,8 @@ const getUpcomingEvents = async (req, res) => {
 
 		if (upcomingEvents.length === 0) {
 			return res
-				.status(404)
-				.json({ message: 'No upcoming events at the moment.' });
+				.status(200)
+				.json({ message: 'No upcoming events at the moment.', data:[] });
 		}
 
 		const totalUpcomingEvents = await Event.countDocuments({
@@ -254,8 +254,8 @@ const getCompletedEvents = async (req, res) => {
 
 		if (completedEvents.length === 0) {
 			return res
-				.status(404)
-				.json({ message: 'No completed events at the moment.' });
+				.status(200)
+				.json({ message: 'No completed events at the moment.', data:[]});
 		}
 
 		const totalCompletedEvents = await Event.countDocuments({
