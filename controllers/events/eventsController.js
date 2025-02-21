@@ -185,7 +185,6 @@ const getEventsById = async (req, res) => {
 	}
 };
 
-
 const getUpcomingEvents = async (req, res) => {
 	try {
 		let page = parseInt(req.query.page) || 1;
@@ -206,9 +205,10 @@ const getUpcomingEvents = async (req, res) => {
 			.limit(limit);
 
 		if (upcomingEvents.length === 0) {
-			return res
-				.status(200)
-				.json({ message: 'No upcoming events at the moment.', data:[] });
+			return res.status(200).json({
+				message: 'No upcoming events at the moment.',
+				data: upcomingEvents,
+			});
 		}
 
 		const totalUpcomingEvents = await Event.countDocuments({
@@ -255,7 +255,10 @@ const getCompletedEvents = async (req, res) => {
 		if (completedEvents.length === 0) {
 			return res
 				.status(200)
-				.json({ message: 'No completed events at the moment.', data:[]});
+				.json({
+					message: 'No completed events at the moment.',
+					data: completedEvents,
+				});
 		}
 
 		const totalCompletedEvents = await Event.countDocuments({
