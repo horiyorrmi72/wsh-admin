@@ -2,7 +2,7 @@
   "name": "wsh-admin",
   "version": "1.0.0",
   "description": "admin section for women safe house initiatives",
-  "main": "server.js",
+  "main": "bin/www/index.js",
   "directories": {
     "test": "tests"
   },
@@ -23,8 +23,12 @@
   "dependencies": {
     "bcryptjs": "^3.0.0",
     "cloudinary": "^1.41.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
     "express": "^4.21.2",
+    "express-session": "^1.18.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.10.1",
     "multer": "^1.4.5-lts.1",
