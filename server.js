@@ -9,7 +9,10 @@ connectDb();
 
 const app = express();
 const corsOptions = {
-	origin: 'https://wsh-five.vercel.app',
+	origin: '*',
+	methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+	preflightContinue: false,
+	optionsSuccessStatus: 204,
 };
 app.use(cookieParser());
 app.use(
