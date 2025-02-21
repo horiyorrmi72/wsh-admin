@@ -2,6 +2,21 @@ const { default: mongoose } = require('mongoose');
 const Event = require('../../models/eventModel');
 const { cloudinary } = require('../../utils/uploads/cloudinary');
 
+const paginateResults = async (query, page, limit) => {
+	const skip = (page - 1) * limit;
+	const results = await query.skip(skip).limit(limit);
+	const totalCount = await Event.countDocuments(query.getQuery());
+
+	return {
+		data: results,
+		pagination: {
+			currentPage: page,
+			totalPages: Math.ceil(totalCount / limit),
+			total: totalCount,
+		},
+	};
+};
+
 const createEvent = async (req, res) => {
 	const { title, description, startDate, endDate, registrationUrl, state } =
 		req.body;
@@ -20,13 +35,12 @@ const createEvent = async (req, res) => {
 
 		const imageUrl = req.file ? req.file.path : null;
 		const imagePublicId = req.file ? req.file.filename : null;
-		// console.log(req.file)
 
 		const event = new Event({
 			title,
 			description,
-			startDate,
-			endDate,
+			startDate: new Date(startDate),
+			endDate: endDate ? new Date(endDate) : null,
 			registrationUrl,
 			state: state || 'upcoming',
 			imagePath: imageUrl,
@@ -46,34 +60,47 @@ const createEvent = async (req, res) => {
 const updateEvent = async (req, res) => {
 	const { id } = req.params;
 	const { title, description, startDate, endDate, registrationUrl } = req.body;
-	const imagePath = req.file ? req.file.path : undefined;
+	const newImagePath = req.file ? req.file.path : undefined;
 
 	try {
 		if (!mongoose.Types.ObjectId.isValid(id)) {
 			return res.status(400).json({ message: 'Invalid event ID' });
 		}
 
-		const updateFields = {};
-		if (title) updateFields.title = title;
-		if (description) updateFields.description = description;
-		if (startDate) updateFields.startDate = startDate;
-		if (endDate) updateFields.endDate = endDate;
-		if (registrationUrl) updateFields.registrationUrl = registrationUrl;
-		if (imagePath) updateFields.imagePath = imagePath;
+		const event = await Event.findById(id);
+		if (!event) {
+			return res.status(404).json({ message: 'Event not found' });
+		}
+
+		// Delete old Cloudinary image if a new image is uploaded
+		if (newImagePath && event.assetPublicId) {
+			try {
+				await cloudinary.api.delete_resources(event.assetPublicId);
+			} catch (imageError) {
+				console.error(
+					'Error deleting old image from Cloudinary:',
+					imageError.message
+				);
+			}
+		}
+
+		const updateFields = {
+			...(title && { title }),
+			...(description && { description }),
+			...(startDate && { startDate: new Date(startDate) }),
+			...(endDate && { endDate: new Date(endDate) }),
+			...(registrationUrl && { registrationUrl }),
+			...(newImagePath && { imagePath: newImagePath }),
+		};
 
 		const updatedEvent = await Event.findByIdAndUpdate(id, updateFields, {
 			new: true,
 			runValidators: true,
 		});
 
-		if (!updatedEvent) {
-			return res.status(404).json({ message: 'Event not found' });
-		}
-
-		return res.status(200).json({
-			message: 'Event updated successfully',
-			event: updatedEvent,
-		});
+		return res
+			.status(200)
+			.json({ message: 'Event updated successfully', event: updatedEvent });
 	} catch (error) {
 		console.error(error.message);
 		return res
@@ -92,32 +119,21 @@ const removeEvent = async (req, res) => {
 	}
 
 	try {
-		const deletedEvent = await Event.findById(id);
+		const deletedEvent = await Event.findByIdAndDelete(id);
 		if (!deletedEvent) {
 			return res.status(404).json({ message: 'Event not found' });
 		}
 
 		if (deletedEvent.assetPublicId) {
 			try {
-				const imagePublicId = deletedEvent.assetPublicId;
-				// console.log(imagePublicId);
-				// .split('/')
-				// .pop()
-				// .split('.')[0];
-				await cloudinary.api.delete_resources(imagePublicId);
+				await cloudinary.api.delete_resources(deletedEvent.assetPublicId);
 			} catch (imageError) {
 				console.error(
 					'Error deleting image from Cloudinary:',
 					imageError.message
 				);
-				return res.status(500).json({
-					message: 'Error deleting image from Cloudinary',
-					error: imageError.message,
-				});
 			}
 		}
-
-		await Event.deleteOne({ _id: id });
 
 		return res.status(200).json({ message: 'Event deleted successfully' });
 	} catch (error) {
@@ -130,28 +146,13 @@ const removeEvent = async (req, res) => {
 
 const getEvents = async (req, res) => {
 	try {
-		const page = parseInt(req.query.page) || 1;
+		const page = Math.max(parseInt(req.query.page) || 1, 1);
 		const limit = parseInt(req.query.limit) || 10;
-		if (page < 1) {
-			return res
-				.status(400)
-				.json({ message: 'Invalid page number. Page must be 1 or greater.' });
-		}
-		const skip = (page - 1) * limit;
 
-		const events = await Event.find().skip(skip).limit(limit);
-		if (events.length === 0) {
-			return res.status(200).json({ message: 'No events at the moment.' });
-		}
-		const totalEvents = await Event.countDocuments();
-		return res.status(200).json({
-			message: 'Events fetched successfully',
-			data: events,
-			pagination: {
-				totalPage: Math.ceil(totalEvents / limit),
-				total: totalEvents,
-			},
-		});
+		const results = await paginateResults(Event.find(), page, limit);
+		return res
+			.status(200)
+			.json({ message: 'Events fetched successfully', ...results });
 	} catch (error) {
 		console.error(error.message);
 		return res
@@ -169,11 +170,9 @@ const getEventsById = async (req, res) => {
 
 	try {
 		const event = await Event.findById(id);
-
 		if (!event) {
 			return res.status(404).json({ message: 'Event not found' });
 		}
-
 		return res
 			.status(200)
 			.json({ message: 'Event fetched successfully', data: event });
@@ -187,101 +186,62 @@ const getEventsById = async (req, res) => {
 
 const getUpcomingEvents = async (req, res) => {
 	try {
-		let page = parseInt(req.query.page) || 1;
+		const page = Math.max(parseInt(req.query.page) || 1, 1);
 		const limit = parseInt(req.query.limit) || 10;
 
-		if (page < 1) {
-			return res
-				.status(400)
-				.json({ message: 'Invalid page number. Page must be 1 or greater.' });
-		}
-
-		const skip = (page - 1) * limit;
-		const now = Date.now();
-
-		const upcomingEvents = await Event.find({
-			startDate: { $gte: now },
-			state: 'upcoming',
-		})
-			.skip(skip)
-			.limit(limit);
-
-		if (upcomingEvents.length === 0) {
-			return res.status(200).json({
-				message: 'No upcoming events at the moment.',
-				data: upcomingEvents,
-			});
-		}
-
-		const totalUpcomingEvents = await Event.countDocuments({
-			startDate: { $gte: Date.now() },
-		});
-
-		return res.status(200).json({
-			message: 'Fetched Upcoming Events Successfully.',
-			data: upcomingEvents,
-			pagination: {
-				currentPage: page,
-				totalPages: Math.ceil(totalUpcomingEvents / limit),
-				total: totalUpcomingEvents,
-			},
-		});
+		const results = await paginateResults(
+			Event.find({ startDate: { $gte: new Date() }, state: 'upcoming' }),
+			page,
+			limit
+		);
+		return res
+			.status(200)
+			.json({ message: 'Fetched Upcoming Events Successfully.', ...results });
 	} catch (error) {
 		console.error(error.message);
-		return res.status(500).json({
-			message: 'An error occurred while fetching upcoming events.',
-			error: error.message,
-		});
+		return res
+			.status(500)
+			.json({
+				message: 'Error fetching upcoming events.',
+				error: error.message,
+			});
+	}
+};
+
+const updateEventStates = async () => {
+	try {
+		await Event.updateMany(
+			{ startDate: { $lt: new Date() }, state: 'upcoming' },
+			{ $set: { state: 'completed' } }
+		);
+		console.log('Event states updated successfully.');
+	} catch (error) {
+		console.error('Error updating event states:', error.message);
 	}
 };
 
 const getCompletedEvents = async (req, res) => {
+	await updateEventStates();
 	try {
-		let page = parseInt(req.query.page) || 1;
+		const page = Math.max(parseInt(req.query.page) || 1, 1);
 		const limit = parseInt(req.query.limit) || 10;
 
-		if (page < 1) {
-			return res
-				.status(400)
-				.json({ message: 'Invalid page number. Page must be 1 or greater.' });
-		}
-
-		const skip = (page - 1) * limit;
-		const now = Date.now();
-
-		const completedEvents = await Event.find({
-			startDate: { $lt: now },
-			state: 'completed',
-		})
-			.skip(skip)
-			.limit(limit);
-
-		if (completedEvents.length === 0) {
-			return res.status(200).json({
-				message: 'No completed events at the moment.',
-				data: completedEvents,
-			});
-		}
-
-		const totalCompletedEvents = await Event.countDocuments({
-			startDate: { $lt: Date.now() },
-		});
-
-		return res.status(200).json({
-			message: 'Fetched Upcoming Events Successfully.',
-			data: completedEvents,
-			pagination: {
-				currentPage: page,
-				totalPages: Math.ceil(totalCompletedEvents / limit),
-				total: totalCompletedEvents,
-			},
-		});
+		const results = await paginateResults(
+			Event.find({ startDate: { $lt: new Date() } }),
+			page,
+			limit
+		);
+		return res
+			.status(200)
+			.json({ message: 'Fetched Completed Events Successfully.', ...results });
 	} catch (error) {
 		console.error(error.message);
-		return res.status(500).json({
-			message: 'An error occurred while fetching upcoming events.',
-			error: error.message,
-		});
+		return res
+			.status(500)
+			.json({
+				message: 'Error fetching completed events.',
+				error: error.message,
+			});
 	}
 };
 
