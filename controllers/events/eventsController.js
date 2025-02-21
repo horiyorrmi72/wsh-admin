@@ -210,19 +210,20 @@ const getUpcomingEvents = async (req, res) => {
 
 const updateEventStates = async () => {
 	try {
-		await Event.updateMany(
-			{ startDate: { $lt: new Date() }, state: 'upcoming' },
+		const events = await Event.updateMany(
+			{ startDate: { $lt: new Date() } },
 			{ $set: { state: 'completed' } }
 		);
-		console.log('Event states updated successfully.');
+
+		console.log(events);
 	} catch (error) {
 		console.error('Error updating event states:', error.message);
 	}
 };
 
 const getCompletedEvents = async (req, res) => {
-	await updateEventStates();
 	try {
+		await updateEventStates();
 		const page = Math.max(parseInt(req.query.page) || 1, 1);
 		const limit = parseInt(req.query.limit) || 10;
 
