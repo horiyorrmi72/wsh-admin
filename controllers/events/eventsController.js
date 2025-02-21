@@ -197,9 +197,11 @@ const getUpcomingEvents = async (req, res) => {
 		}
 
 		const skip = (page - 1) * limit;
+		const now = Date.now();
 
 		const upcomingEvents = await Event.find({
-			startDate: { $gte: Date.now() },
+			startDate: { $gte: now },
+			state: 'upcoming',
 		})
 			.skip(skip)
 			.limit(limit);
@@ -245,20 +247,20 @@ const getCompletedEvents = async (req, res) => {
 		}
 
 		const skip = (page - 1) * limit;
+		const now = Date.now();
 
 		const completedEvents = await Event.find({
-			startDate: { $lt: Date.now() },
+			startDate: { $lt: now },
+			state: 'completed',
 		})
 			.skip(skip)
 			.limit(limit);
 
 		if (completedEvents.length === 0) {
-			return res
-				.status(200)
-				.json({
-					message: 'No completed events at the moment.',
-					data: completedEvents,
-				});
+			return res.status(200).json({
+				message: 'No completed events at the moment.',
+				data: completedEvents,
+			});
 		}
 
 		const totalCompletedEvents = await Event.countDocuments({
