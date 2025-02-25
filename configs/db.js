@@ -7,7 +7,7 @@ const URL = db_variables.dbUrl;
 
 const adminData = {
 	name: 'Admin',
-	email: 'admin@example.com',
+	email: 'admin@gmail.com',
 	password: 'Admin@1234',
 	role: 'admin',
 };

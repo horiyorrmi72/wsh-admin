@@ -69,7 +69,8 @@ const signin = async (req, res) => {
 			expiryPeriod
 		);
 
-		res.cookie('token', token, { httpOnly: true, maxAge: 3 * 60 * 60 * 1000 });
+		const myCookie = res.cookie('token', token, { httpOnly: true, maxAge: 3 * 60 * 60 * 1000 });
+		// console.dir(`Cookie: ${token}`);
 		return res.redirect('/dashboard');
 	} catch (error) {
 		console.error('Error during login:', error.message);
