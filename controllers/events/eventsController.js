@@ -149,7 +149,7 @@ const getEvents = async (req, res) => {
 		const page = Math.max(parseInt(req.query.page) || 1, 1);
 		const limit = parseInt(req.query.limit) || 10;
 
-		const results = await paginateResults(Event.find(), page, limit);
+		const results = await paginateResults(Event.find().sort({ createdAt: -1}), page, limit)
 		return res
 			.status(200)
 			.json({ message: 'Events fetched successfully', ...results });
@@ -199,12 +199,10 @@ const getUpcomingEvents = async (req, res) => {
 			.json({ message: 'Fetched Upcoming Events Successfully.', ...results });
 	} catch (error) {
 		console.error(error.message);
-		return res
-			.status(500)
-			.json({
-				message: 'Error fetching upcoming events.',
-				error: error.message,
-			});
+		return res.status(500).json({
+			message: 'Error fetching upcoming events.',
+			error: error.message,
+		});
 	}
 };
 
@@ -237,12 +235,10 @@ const getCompletedEvents = async (req, res) => {
 			.json({ message: 'Fetched Completed Events Successfully.', ...results });
 	} catch (error) {
 		console.error(error.message);
-		return res
-			.status(500)
-			.json({
-				message: 'Error fetching completed events.',
-				error: error.message,
-			});
+		return res.status(500).json({
+			message: 'Error fetching completed events.',
+			error: error.message,
+		});
 	}
 };
 
