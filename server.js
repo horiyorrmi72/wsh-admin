@@ -7,6 +7,7 @@ const connectDb = require('./configs/db');
 const bodyParser = require('body-parser');
 const expressLayout = require('express-ejs-layouts');
 const axios = require('axios');
+const { auth,isAdmin } = require('./controllers/auth/authUtils');
 
 connectDb();
 
@@ -27,7 +28,7 @@ app.use(
 		secret: 'my_secret_key',
 		resave: false,
 		saveUninitialized: true,
-		cookie: { secure: true },
+		cookie: { secure: process.env.NODE_ENV === 'production' },
 	})
 );
 app.use(expressLayout);
@@ -38,16 +39,20 @@ app.use(express.static('public'));
 
 app.use('/api', route);
 app.get('/admin', (req, res) => {
-	res.render('login', { error: null });
+	const token = req.cookies.token;
+	res.render('login', { token, error:null });
 });
-app.get('/dashboard', (req, res) => {
-	res.render('dashboard', { error: null });
+app.get('/dashboard',auth, (req, res) => {
+	const token = req.cookies.token;
+	// console.log(token);
+	res.render('dashboard', { token });
 });
 let uri = `https://wsh-admin.onrender.com/api/events`;
 
 app.get('/eventspage', (req, res) => {
-	const token = req.cookies;
-	res.render('components/events/events',{token}); // No events passed
+	const token = req.cookies.token;
+	// console.log(token);
+	res.render('components/events/events',{token});
 });
 
 app.get('/lay', (req, res) => {
