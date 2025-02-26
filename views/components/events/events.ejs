@@ -1,54 +1,24 @@
 <div class="event-creator ">
-    <div><button>Add New Event</button></div>
-    <!-- <div class="event-creator-form hide-event-section"> -->
-    <div class="event-creator-form">
+    <div><button type="submit">Add New Event</button></div>
+    <div class="event-creator-form hide-event-section">
+        <!-- <div class="event-creator-form"> -->
         <form action="" id="event-form">
             <label for="">Title*</label>
             <input type="text" name="title" placeholder="Event Title">
             <label for="">Description*</label>
             <textarea name="description" id="" cols="10" rows="10"></textarea>
             <label for="">Starts*</label>
-            <input type="datetime-local" name="starts" placeholder="event starts">
+            <input type="datetime-local" name="startDate" placeholder="event starts">
             <label for="">Ends</label>
-            <input type="datetime-local" name="ends" placeholder="Event ends">
+            <input type="datetime-local" name="endDate" placeholder="Event ends">
             <label for="">Registration Link</label>
-            <input type="text" name="link" placeholder="Registration Link">
-            <input type="file" name="image" id="" placeholder="Event Image" accept="image/*">
+            <input type="text" name="registrationUrl" placeholder="Registration Link">
+            <input type="file" name="imagePath" id="" placeholder="Event Image" accept="image/*">
             <input type="button" value="Add Event" name="submit-btn">
 
         </form>
     </div>
 </div>
-<script>
-    document.querySelector("input[name=submit-btn]").addEventListener("click", addEvent);
-
-    async function addEvent()
-        {
-            const form = document.getElementById("event-form");
-            const formData = new FormData(form); 
-
-            try {
-                const response = await fetch("https://wsh-admin.onrender.com/api/events/create-event", {
-                    method: "POST",
-                    body: formData,
-                    headers: {
-                        authorization: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3Yjc3YTc2ODc4OTFlZmU1ZGExM2ZiNSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc0MDQ4MDE4OSwiZXhwIjoxNzQwNDkwOTg5fQ.hW2QnyXbql8TAoNUk6TJpNmTqasmtiZiJwj1XcNIS54",
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error("Error creating event: " + response.status);
-                }
-
-                alert("Event created successfully!");
-                fetchEvents();
-
-            } catch (error) {
-                console.error("Failed to create a new event:", error.message);
-                alert("Failed to create event. Please try again.");
-            }
-        }
-</script>
 <div>
     <h1> Events</h1>
 
@@ -58,21 +28,84 @@
         <span id="pageInfo"></span>
         <button id="nextPage">Next</button>
     </div>
+</div>
+<script>
+    const authToken = "<%= token %>";
+    document.querySelector("input[name=submit-btn]")?.addEventListener("click", addEvent);
 
-    <script>
-        let currentPage = 1;
-        let totalPages = 1;
+    document.querySelector("button[type=submit]")?.addEventListener("click", showForm);
 
-        async function deleteEvent(eventId)
-        {
-            if (!confirm("Are you sure you want to delete this event?")) {
-                return;
+    async function showForm()
+    {
+        const formContainer = document.querySelector('.hide-event-section') || document.querySelector(".event-creator-form");
+        if (formContainer) {
+            formContainer.classList.toggle('hide-event-section');
+            formContainer.classList.toggle('event-creator-form');
+        }
+
+    }
+
+    async function addEvent()
+    {
+        const form = document.getElementById("event-form");
+        const formData = new FormData(form);
+
+        
+        const title = formData.get('title');
+        const description = formData.get('description');
+        const startDate = formData.get('startDate'); 
+
+        if (!title || !description || !startDate) {
+            alert("Event must have a title, description, and a start date.");
+            return;
+        }
+
+        if (!formData.get('state')) {
+            formData.append('state', 'upcoming');
+        }
+
+        try {
+            const response = await fetch("https://wsh-admin.onrender.com/api/events/create-event", {
+                method: "POST",
+                body: JSON.stringify(Object.fromEntries(formData)),
+                headers: {
+                    "Content-Type": "application/json",
+                    "authorization": `Bearer ${authToken}`,
+                },
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error("Error creating event: " + errorData.message);
             }
 
-            try {
-                const response = await fetch(`https://wsh-admin.onrender.com/api/events/delete-event/${eventId}`, {
+            alert("Event created successfully!");
+            fetchEvents();
+        } catch (error) {
+            console.error("Failed to create a new event:", error.message);
+            alert("Failed to create event. Please try again.");
+        }
+    }
+
+
+
+    let currentPage = 1;
+    let totalPages = 1;
+
+
+    async function deleteEvent(eventId)
+    {
+        if (!confirm("Are you sure you want to delete this event?")) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`https://wsh-admin.onrender.com/api/events/delete-event/${eventId}`, {
                 method: 'DELETE',
-                });
+                headers: {
+                    authorization: `Bearer ${authToken}`,
+                }
+            });
 
             if (!response.ok) {
                 // console.error(response.data);
@@ -85,28 +118,28 @@
             console.error("Error deleting event:", error);
             alert("Failed to delete event. Please try again.");
         }
-        }
+    }
 
-        async function fetchEvents(page = 1)
-        {
-            try {
-                const response = await fetch(`https://wsh-admin.onrender.com/api/events?page=${page}`);
+    async function fetchEvents(page = 1)
+    {
+        try {
+            const response = await fetch(`https://wsh-admin.onrender.com/api/events?page=${page}`);
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
 
-                const responseData = await response.json();
-                const events = responseData.data;
-                totalPages = responseData.pagination.totalPages;
-                currentPage = responseData.pagination.currentPage;
+            const responseData = await response.json();
+            const events = responseData.data;
+            totalPages = responseData.pagination.totalPages;
+            currentPage = responseData.pagination.currentPage;
 
-                const eventsContainer = document.getElementById('events');
-                eventsContainer.innerHTML = '';
+            const eventsContainer = document.getElementById('events');
+            eventsContainer.innerHTML = '';
 
-                events.forEach(event =>
-                {
-                    eventsContainer.innerHTML += `
+            events.forEach(event =>
+            {
+                eventsContainer.innerHTML += `
                 <div class="event" style="display:grid; grid-template-columns:1fr 1fr auto;">
                     <div class="event-image" style="width:60%">
                         <img src="${event.imagePath}" alt="${event.title} image" style="width:100%;">
@@ -124,41 +157,40 @@
                     </div>
                 </div>
             `;
-                });
+            });
 
-                document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${totalPages}`;
-                document.getElementById('prevPage').disabled = currentPage === 1;
-                document.getElementById('nextPage').disabled = currentPage === totalPages;
+            document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('prevPage').disabled = currentPage === 1;
+            document.getElementById('nextPage').disabled = currentPage === totalPages;
 
 
-                document.querySelectorAll('.delete-btn').forEach(button =>
+            document.querySelectorAll('.delete-btn').forEach(button =>
+            {
+                button.addEventListener('click', () =>
                 {
-                    button.addEventListener('click', () =>
-                    {
-                        const eventId = button.getAttribute('event-id');
-                        deleteEvent(eventId);
-                    });
+                    const eventId = button.getAttribute('event-id');
+                    deleteEvent(eventId);
                 });
+            });
 
-            } catch (error) {
-                console.error('Error fetching events:', error);
-                document.getElementById('events').innerHTML = `<p>Failed to load events. ${error.message}</p>`;
-            }
+        } catch (error) {
+            console.error('Error fetching events:', error);
+            document.getElementById('events').innerHTML = `<p>Failed to load events. ${error.message}</p>`;
         }
+    }
 
-        //event fetching on page load
-        document.addEventListener('DOMContentLoaded', () => fetchEvents(1));
+    //event fetching on page load
+    document.addEventListener('DOMContentLoaded', () => fetchEvents(1));
 
-        // Pagination event listeners
-        document.getElementById('prevPage').addEventListener('click', () =>
-        {
-            if (currentPage > 1) fetchEvents(currentPage - 1);
-        });
+    // Pagination event listeners
+    document.getElementById('prevPage').addEventListener('click', () =>
+    {
+        if (currentPage > 1) fetchEvents(currentPage - 1);
+    });
 
-        document.getElementById('nextPage').addEventListener('click', () =>
-        {
-            if (currentPage < totalPages) fetchEvents(currentPage + 1);
-        });
+    document.getElementById('nextPage').addEventListener('click', () =>
+    {
+        if (currentPage < totalPages) fetchEvents(currentPage + 1);
+    });
 
-    </script>
-</div>
+</script>
