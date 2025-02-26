@@ -28,12 +28,11 @@ const verifyToken = (token) => {
 };
 
 const extractToken = (req) => {
-	const authHeader = req.headers.authorization;
-	// console.log(authHeader);
-	if (!authHeader || !authHeader.startsWith('Bearer ')) {
-		return null;
-	}
-	return authHeader.split(' ')[1];
+	return (
+		req.cookies.token ||
+		(req.headers.authorization && req.headers.authorization.split(' ')[1]) ||
+		null
+	);
 };
 
 const isAdmin = async (req, res, next) => {
@@ -46,8 +45,7 @@ const isAdmin = async (req, res, next) => {
 		if (!decodedToken) {
 			return res.status(401).json({ message: 'Invalid token.' });
 		}
-		if (decodedToken.role !== 'admin')
-		{
+		if (decodedToken.role !== 'admin') {
 			console.log(decodedToken.role);
 			return res.status(403).json({
 				message: `You don't have the priviledge to access this page.`,
