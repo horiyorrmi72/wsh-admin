@@ -32,7 +32,7 @@ const signup = async (req, res) => {
 			password: hashpassword,
 		});
 
-		user.save();
+		await user.save();
 		return res.status(201).json({ message: 'Successfully Registered!' });
 	} catch (error) {
 		console.error(error);
@@ -70,7 +70,7 @@ const signin = async (req, res) => {
 		);
 
 		const myCookie = res.cookie('token', token, { httpOnly: true, maxAge: 3 * 60 * 60 * 1000 });
-		console.log(`Cookie: ${token}`);
+		// console.log(`Cookie: ${token}`);
 		return res.redirect('/dashboard');
 	} catch (error) {
 		console.error('Error during login:', error.message);
