@@ -9,4 +9,9 @@ module.exports = {
 	authVariables: {
 		jwt_secret: process.env.JWT_SECRET,
 	},
+	flwConfigs: {
+		publicKey: process.env.FLW_PUBLIC_KEY,
+		secretKey: process.env.FLW_SECRET_KEY,
+		encrypt: process.env.FLW_ENCRYPTION_KEY,
+	},
 };
