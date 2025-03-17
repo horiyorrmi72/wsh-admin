@@ -13,5 +13,6 @@ module.exports = {
 		publicKey: process.env.FLW_PUBLIC_KEY,
 		secretKey: process.env.FLW_SECRET_KEY,
 		encrypt: process.env.FLW_ENCRYPTION_KEY,
+		redirect: process.env.FLW_REDIRECT_URL
 	},
 };
