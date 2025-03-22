@@ -4,11 +4,13 @@ const { hashData } = require('../controllers/auth/authUtils');
 const User = require('../models/userModel');
 
 const URL = db_variables.dbUrl;
+const adminEmail = db_variables.adminEmail;
+const adminPassword = db_variables.password;
 
 const adminData = {
 	name: 'Admin',
-	email: 'admin@gmail.com',
-	password: 'Admin@1234',
+	email: adminEmail,
+	password: adminPassword,
 	role: 'admin',
 };
 
@@ -19,7 +21,7 @@ const connectDb = async () => {
 		});
 		console.log('✅ Connected to the database successfully!');
 
-		// create admin after successful connection
+	
 		await seedAdmin();
 	} catch (err) {
 		console.error(`❌ Error connecting to the database: ${err.message}`);
@@ -32,7 +34,7 @@ const seedAdmin = async () => {
 	try {
 		const existingAdmin = await User.findOne({ role: 'admin' });
 		if (existingAdmin) {
-			// console.log('✅ Admin user already exists.');
+			// console.log(' Admin user already exists.');
 			return;
 		}
 
@@ -42,7 +44,7 @@ const seedAdmin = async () => {
 
 		// Creating the admin user
 		await User.create(adminData);
-		console.log('🎉 Admin user created successfully!');
+		console.log(' Admin user created successfully!');
 	} catch (error) {
 		console.error('❌ Error seeding admin:', error.message);
 	}

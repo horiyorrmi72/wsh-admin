@@ -5,7 +5,6 @@ const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const connectDb = require('./configs/db');
 const bodyParser = require('body-parser');
-const expressLayout = require('express-ejs-layouts');
 const axios = require('axios');
 const { auth, isAdmin } = require('./controllers/auth/authUtils');
 
@@ -32,11 +31,10 @@ app.use(
 		cookie: { secure: process.env.NODE_ENV === 'production' },
 	})
 );
-app.use(expressLayout);
 
-app.set('view engine', 'ejs');
+
 app.use(cors(corsOptions));
-app.use(express.static('public'));
+
 
 app.use('/api', route);
 

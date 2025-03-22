@@ -5,6 +5,8 @@ module.exports = {
 	},
 	db_variables: {
 		dbUrl: process.env.DB_URL,
+		adminEmail: process.env.ADMIN_EMAIL,
+		password: process.env.ADMIN_PASSWORD,
 	},
 	authVariables: {
 		jwt_secret: process.env.JWT_SECRET,

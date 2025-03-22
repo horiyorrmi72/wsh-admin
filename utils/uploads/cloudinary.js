@@ -12,7 +12,7 @@ const storage = new CloudinaryStorage({
 	cloudinary: cloudinary,
 	params: {
 		folder: 'wsh-events',
-		allowed_formats: ['jpg', 'jpeg', 'png', 'gif'],
+		allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'pdf'],
 	},
 });
 

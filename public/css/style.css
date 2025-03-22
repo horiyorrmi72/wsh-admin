@@ -183,7 +183,7 @@ li {
 	cursor: pointer;
 }
 
-.event-creator-form textarea {
+.event-creator-form > textarea {
 	border-radius: 5px;
 	width: 95%;
 	/* margin: 5px -15px 5px 20px; */
