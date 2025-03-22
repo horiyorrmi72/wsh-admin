@@ -69,13 +69,10 @@ const signin = async (req, res) => {
 			expiryPeriod
 		);
 
-		const myCookie = res.cookie('token', token, { httpOnly: true, maxAge: 3 * 60 * 60 * 1000 });
-		// console.log(`Cookie: ${token}`);
-		// return res.redirect('/dashboard');
+	
 		res.status(200).json({
 			message: 'Login successful',
-			user: { id: user._id, email: user.email, role: user.role },
-			token, // Send token only if needed (for localStorage-based auth)
+			token,
 		});
 	} catch (error) {
 		console.error('Error during login:', error.message);
