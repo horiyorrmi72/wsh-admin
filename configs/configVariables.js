@@ -15,4 +15,5 @@ module.exports = {
 		encrypt: process.env.FLW_ENCRYPTION_KEY,
 		redirect: process.env.FLW_REDIRECT_URL
 	},
+	
 };

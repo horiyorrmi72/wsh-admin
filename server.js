@@ -26,7 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(
 	session({
-		secret: 'my_secret_key',
+		secret: process.env.SESSION_SECRET,
 		resave: false,
 		saveUninitialized: true,
 		cookie: { secure: process.env.NODE_ENV === 'production' },
@@ -39,30 +39,6 @@ app.use(cors(corsOptions));
 app.use(express.static('public'));
 
 app.use('/api', route);
-app.get('/admin', (req, res) => {
-	const token = req.cookies.token;
-	res.render('login', { token, error: null });
-});
-app.get('/dashboard', auth, (req, res) => {
-	const token = req.cookies.token;
-	// console.log(token);
-	res.render('dashboard', { token });
-});
-let uri = `https://wsh-admin.onrender.com/api/events`;
 
-app.get('/eventspage', (req, res) => {
-	const token = req.cookies.token;
-	// console.log(token);
-	res.render('components/events/events', { token });
-});
-
-app.get('/lay', (req, res) => {
-	const token = req.cookies.token;
-	if (!token)
-	{
-		return res.redirect('/login');
-	}
-	res.render('layout', { token });
-});
 
 module.exports = app;
