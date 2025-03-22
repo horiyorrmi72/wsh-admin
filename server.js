@@ -16,7 +16,6 @@ const corsOptions = {
 	methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
 	preflightContinue: false,
 	optionsSuccessStatus: 204,
-	Credential: true,
 };
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
