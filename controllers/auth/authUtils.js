@@ -28,11 +28,12 @@ const verifyToken = (token) => {
 };
 
 const extractToken = (req) => {
-	return (
-		req.cookies.token ||
-		(req.headers.authorization && req.headers.authorization.split(' ')[1]) ||
-		null
-	);
+	// console.log('Headers:', req.headers);
+	// console.log('Authorization Header:', req.headers.authorization);
+
+	return req.headers.authorization
+		? req.headers.authorization.split(' ')[1]
+		: null;
 };
 
 const isAdmin = async (req, res, next) => {
