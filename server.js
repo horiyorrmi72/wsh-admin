@@ -13,7 +13,7 @@ connectDb();
 
 const app = express();
 const corsOptions = {
-	origin: process.env.CLIENT_URL || 'http://localhost:4200',
+	origin: process.env.CLIENT_URL || '*',
 	methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
 	allowedHeaders: ['Content-Type', 'Authorization'],
 	optionsSuccessStatus: 204,
