@@ -2,73 +2,28 @@ const { default: mongoose } = require('mongoose');
 const Publication = require('../../models/publicationsModel');
 const { cloudinary } = require('../../utils/uploads/cloudinary');
 
-/**
- * Adds a new publication to the database.
- * 
- * @async
- * @function addPublication
- * @param {Object} req - The request object.
- * @param {Object} req.body - The body of the request containing publication details.
- * @param {string} req.body.title - The title of the publication.
- * @param {string} req.body.description - The description of the publication.
- * @param {string} [req.body.authors='Women Safe House'] - The authors of the publication (default is 'Women Safe House').
- * @param {string} req.body.publicationDate - The publication date in ISO format.
- * @param {string} req.body.publicationUrl - The URL of the publication.
- * @param {string} req.body.category - The category of the publication.
- * @param {Object} res - The response object.
- * @returns {Promise<void>} Sends a JSON response with the result of the operation.
- * 
- * @throws {Error} Returns a 400 status if required parameters are missing or invalid.
- * @throws {Error} Returns a 409 status if a publication with the same title already exists.
- * @throws {Error} Returns a 500 status for internal server errors.
- */
+
 const addPublication = async (req, res) => {
-    let { title, description, authors = 'Women Safe House', publicationDate, publicationUrl, category } = req.body;
+    try
+    {
+        const { title, description, publicationDate, publicationUrl, category } = req.body;
+        let authors = req.body.authors ? JSON.parse(req.body.authors) : [];
 
-    if (!title || !description || !publicationDate || !category) {
-        return res.status(400).json({ message: 'Publication missing required parameters.' });
-    }
-
-    try {
-        const existingPublication = await Publication.findOne({ title });
-        if (existingPublication) {
-            return res.status(409).json({ message: 'Publication with a similar title already exists' });
+        
+        if (!title || !description || !publicationDate || !publicationUrl || !category || authors.length === 0)
+        {
+            return res.status(400).json({ message: 'All fields are required, including at least one author.' });
         }
 
-        // let fileUrl = null;
-        // let filePublicId = null;
-
-        // if (req.file) {
-            // console.log('Received file:', {
-            //     originalname: req.file.originalname,
-            //     mimetype: req.file.mimetype,
-            //     size: req.file.size,
-            //     path: req.file.path
-            // });
-
-//             const uploadedFile = await cloudinary.uploader.upload(req.file.path, {
-//                 folder: "wsh-events",
-//                 resource_type: "auto",
-//                 access_mode: "public",
-//             });
-
-//             console.log('Cloudinary upload response:', uploadedFile);
-
-//             fileUrl = uploadedFile.resource_type === 'raw'
-//                 ? uploadedFile.url.replace('/upload/', '/raw/upload/')
-//                 : uploadedFile.secure_url;
-// ;
-//             console.log('cloud data:', fileUrl);
-//             filePublicId = uploadedFile.public_id;
-        //         }
-        
-        const validCategories = ['Policy', 'Report', 'Research', 'Article', 'News', 'Brief', 'Others'];
-
-        category = validCategories.find(cat => cat.toLowerCase() === category.toLowerCase());
-
-        if (!category)
+        const existingPublication = await Publication.findOne({ title });
+        if (existingPublication)
         {
-            return res.status(400).json({ message: 'Invalid category. Must be one of: ' + validCategories.join(', ') });
+            return res.status(409).json({ message: 'A publication with this title already exists.' });
+        }
+        const validCategories = ['Policy', 'Report', 'Research', 'Article', 'News', 'Brief', 'Others'];
+        if (!validCategories.includes(category))
+        {
+            return res.status(400).json({ message: `Invalid category. Must be one of: ${validCategories.join(', ')}` });
         }
 
         const publication = new Publication({
@@ -83,11 +38,13 @@ const addPublication = async (req, res) => {
         await publication.save();
         return res.status(201).json({ message: 'Publication added successfully', publication });
 
-    } catch (error) {
-        console.error('Error in addPublication:', error.message);
+    } catch (error)
+    {
+        console.error('Error in addPublication:', error);
         return res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 };
+
 
 
 /**
