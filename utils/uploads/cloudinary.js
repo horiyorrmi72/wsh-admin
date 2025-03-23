@@ -1,6 +1,6 @@
-const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
 cloudinary.config({
 	cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -10,13 +10,18 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
 	cloudinary: cloudinary,
-	params: {
-		folder: 'wsh-events',
-		allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'pdf'],
+	params: async (req, file) => {
+		const isImage = file.mimetype.startsWith("image/");
+		return {
+			folder: "wsh-events",
+			format: isImage ? undefined : file.mimetype.split("/")[1], 
+			resource_type: isImage ? "image" : "raw",
+			access_mode: "public", 
+		};
 	},
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
 module.exports = {
 	upload,
