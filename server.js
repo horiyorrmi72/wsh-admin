@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const route = require('./routes');
 const cors = require('cors');
@@ -5,6 +6,7 @@ const session = require('express-session');
 const connectDb = require('./configs/db');
 const bodyParser = require('body-parser');
 const axios = require('axios');
+
 const { auth, isAdmin } = require('./controllers/auth/authUtils');
 
 connectDb();
