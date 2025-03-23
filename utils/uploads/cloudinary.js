@@ -8,6 +8,21 @@ cloudinary.config({
 	api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+/**
+ * Configures a Cloudinary storage instance for handling file uploads.
+ * 
+ * @constant {CloudinaryStorage} storage
+ * @property {Object} cloudinary - The Cloudinary instance used for storage.
+ * @property {Function} params - An asynchronous function that determines the upload parameters.
+ * @param {Object} req - The HTTP request object.
+ * @param {Object} file - The file object being uploaded.
+ * @param {string} file.mimetype - The MIME type of the file.
+ * @returns {Promise<Object>} A promise that resolves to an object containing:
+ *   @property {string} folder - The folder in Cloudinary where files will be stored ("wsh-events").
+ *   @property {string|undefined} format - The file format (undefined for images, or derived from MIME type for other files).
+ *   @property {string} resource_type - The type of resource ("image" for images, "raw" for other files).
+ *   @property {string} access_mode - The access mode for the file ("public").
+ */
 const storage = new CloudinaryStorage({
 	cloudinary: cloudinary,
 	params: async (req, file) => {

@@ -2,6 +2,26 @@ const { default: mongoose } = require('mongoose');
 const Publication = require('../../models/publicationsModel');
 const { cloudinary } = require('../../utils/uploads/cloudinary');
 
+/**
+ * Adds a new publication to the database.
+ * 
+ * @async
+ * @function addPublication
+ * @param {Object} req - The request object.
+ * @param {Object} req.body - The body of the request containing publication details.
+ * @param {string} req.body.title - The title of the publication.
+ * @param {string} req.body.description - The description of the publication.
+ * @param {string} [req.body.authors='Women Safe House'] - The authors of the publication (default is 'Women Safe House').
+ * @param {string} req.body.publicationDate - The publication date in ISO format.
+ * @param {string} req.body.publicationUrl - The URL of the publication.
+ * @param {string} req.body.category - The category of the publication.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} Sends a JSON response with the result of the operation.
+ * 
+ * @throws {Error} Returns a 400 status if required parameters are missing or invalid.
+ * @throws {Error} Returns a 409 status if a publication with the same title already exists.
+ * @throws {Error} Returns a 500 status for internal server errors.
+ */
 const addPublication = async (req, res) => {
     let { title, description, authors = 'Women Safe House', publicationDate, publicationUrl, category } = req.body;
 
@@ -70,6 +90,21 @@ const addPublication = async (req, res) => {
 };
 
 
+/**
+ * Deletes a publication by its ID.
+ *
+ * @async
+ * @function deletePublication
+ * @param {Object} req - The request object.
+ * @param {Object} req.params - The parameters from the request.
+ * @param {string} req.params.id - The ID of the publication to delete.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} Sends a JSON response indicating the result of the deletion.
+ *
+ * @throws {Error} Returns a 400 status if the ID is not provided.
+ * @throws {Error} Returns a 404 status if the publication is not found.
+ * @throws {Error} Returns a 500 status if there is an error during deletion.
+ */
 const deletePublication = async (req, res) => {
     const { id } = req.params;
 
@@ -107,6 +142,16 @@ const deletePublication = async (req, res) => {
     }
 };
 
+/**
+ * Retrieves a list of publications from the database.
+ *
+ * @async
+ * @function getPublications
+ * @param {Object} req - The request object.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} Sends a JSON response containing the list of publications or an error message.
+ * @throws {Error} Returns a 500 status code with an error message if an exception occurs.
+ */
 const getPublications = async (req, res) => { 
     try {
         const publications = await Publication.find();
@@ -117,6 +162,22 @@ const getPublications = async (req, res) => {
     }
 }
 
+/**
+ * Retrieves a publication by its ID.
+ *
+ * @async
+ * @function publicationById
+ * @param {Object} req - The request object.
+ * @param {Object} req.params - The parameters from the request.
+ * @param {string} req.params.id - The ID of the publication to retrieve.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} Sends a JSON response with the publication data if found,
+ * or an error message if the publication is not found or an error occurs.
+ *
+ * @throws {Error} Returns a 400 status if the ID is not provided.
+ * Returns a 404 status if the publication is not found.
+ * Returns a 500 status if an internal server error occurs.
+ */
 const publicationById = async (req, res) => {
     try
     {

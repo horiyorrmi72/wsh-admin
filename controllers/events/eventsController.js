@@ -57,6 +57,27 @@ const createEvent = async (req, res) => {
 	}
 };
 
+/**
+ * Updates an existing event in the database.
+ *
+ * @async
+ * @function updateEvent
+ * @param {Object} req - The request object.
+ * @param {Object} req.params - The request parameters.
+ * @param {string} req.params.id - The ID of the event to update.
+ * @param {Object} req.body - The request body containing event details.
+ * @param {string} [req.body.title] - The updated title of the event.
+ * @param {string} [req.body.description] - The updated description of the event.
+ * @param {string} [req.body.startDate] - The updated start date of the event (ISO format).
+ * @param {string} [req.body.endDate] - The updated end date of the event (ISO format).
+ * @param {string} [req.body.registrationUrl] - The updated registration URL of the event.
+ * @param {Object} [req.file] - The uploaded file object (if a new image is provided).
+ * @param {string} [req.file.path] - The file path of the uploaded image.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} Sends a JSON response with the updated event or an error message.
+ *
+ * @throws {Error} If the event ID is invalid, the event is not found, or an error occurs during the update process.
+ */
 const updateEvent = async (req, res) => {
 	const { id } = req.params;
 	const { title, description, startDate, endDate, registrationUrl } = req.body;
@@ -109,6 +130,19 @@ const updateEvent = async (req, res) => {
 	}
 };
 
+/**
+ * Deletes an event by its ID and optionally removes its associated image from Cloudinary.
+ *
+ * @async
+ * @function removeEvent
+ * @param {Object} req - The request object.
+ * @param {Object} req.params - The parameters from the request.
+ * @param {string} req.params.id - The ID of the event to delete.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} Sends a JSON response indicating the result of the operation.
+ *
+ * @throws {Error} If an error occurs during the deletion process.
+ */
 const removeEvent = async (req, res) => {
 	const { id } = req.params;
 
@@ -144,6 +178,18 @@ const removeEvent = async (req, res) => {
 	}
 };
 
+/**
+ * Retrieves a paginated list of events from the database.
+ *
+ * @async
+ * @function getEvents
+ * @param {Object} req - The request object.
+ * @param {Object} req.query - The query parameters from the request.
+ * @param {string} [req.query.page] - The page number for pagination (default is 1).
+ * @param {string} [req.query.limit] - The number of items per page for pagination (default is 10).
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} Sends a JSON response containing the paginated events or an error message.
+ */
 const getEvents = async (req, res) => {
 	try {
 		const page = Math.max(parseInt(req.query.page) || 1, 1);
@@ -161,6 +207,21 @@ const getEvents = async (req, res) => {
 	}
 };
 
+/**
+ * Retrieves an event by its ID.
+ *
+ * @async
+ * @function getEventsById
+ * @param {Object} req - The request object.
+ * @param {Object} req.params - The request parameters.
+ * @param {string} req.params.id - The ID of the event to retrieve.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} Sends a JSON response with the event data or an error message.
+ *
+ * @throws {Error} Returns a 400 status if the ID is invalid.
+ * @throws {Error} Returns a 404 status if the event is not found.
+ * @throws {Error} Returns a 500 status for any internal server errors.
+ */
 const getEventsById = async (req, res) => {
 	const { id } = req.params;
 
@@ -184,6 +245,19 @@ const getEventsById = async (req, res) => {
 	}
 };
 
+/**
+ * Retrieves a paginated list of upcoming events from the database.
+ *
+ * @async
+ * @function getUpcomingEvents
+ * @param {Object} req - The request object.
+ * @param {Object} req.query - The query parameters from the request.
+ * @param {string} [req.query.page] - The page number for pagination (default is 1).
+ * @param {string} [req.query.limit] - The number of items per page for pagination (default is 10).
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} Sends a JSON response with the paginated list of upcoming events or an error message.
+ * @throws {Error} Returns a 500 status code with an error message if an exception occurs.
+ */
 const getUpcomingEvents = async (req, res) => {
 	try {
 		const page = Math.max(parseInt(req.query.page) || 1, 1);
@@ -206,6 +280,17 @@ const getUpcomingEvents = async (req, res) => {
 	}
 };
 
+/**
+ * Updates the state of events in the database to 'completed' if their start date is in the past.
+ * 
+ * This function queries the database for events with a `startDate` earlier than the current date
+ * and updates their `state` field to 'completed'. Logs the result of the update operation or 
+ * an error message if the operation fails.
+ * 
+ * @async
+ * @function updateEventStates
+ * @returns {Promise<void>} Resolves when the update operation is complete.
+ */
 const updateEventStates = async () => {
 	try {
 		const events = await Event.updateMany(
@@ -219,6 +304,19 @@ const updateEventStates = async () => {
 	}
 };
 
+/**
+ * Retrieves a paginated list of completed events (events with a start date in the past).
+ * Updates event states before fetching the data.
+ *
+ * @async
+ * @function getCompletedEvents
+ * @param {Object} req - The request object.
+ * @param {Object} req.query - The query parameters from the request.
+ * @param {string} [req.query.page] - The page number for pagination (default is 1).
+ * @param {string} [req.query.limit] - The number of items per page for pagination (default is 10).
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>} Sends a JSON response with the paginated list of completed events or an error message.
+ */
 const getCompletedEvents = async (req, res) => {
 	try {
 		await updateEventStates();
