@@ -117,9 +117,34 @@ const getPublications = async (req, res) => {
     }
 }
 
+const publicationById = async (req, res) => {
+    try
+    {
+        const { id } = req.params;
+        if (!id)
+        {
+            return res.status(400).json({ message: 'Selected data is either deleted or does not exist!, please select a valid data.' });
+        }
+
+        const publication = await Publication.findById(id);
+        if (!publication)
+        {
+            return res.status(404).json({ message: 'Publication not found' });
+        }
+
+        return res.status(200).json({ publication });
+
+    }catch (error)
+    {
+        console.error('Error in publicationById:', error.message);
+        return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+    }
+}
+
 
 module.exports = {
     addPublication,
     deletePublication,
-    getPublications
+    getPublications,
+    publicationById
 };
