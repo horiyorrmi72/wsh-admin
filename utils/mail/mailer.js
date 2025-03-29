@@ -1,32 +1,51 @@
 const nodemailer = require('nodemailer');
+const { mailer } = require('../../configs/configVariables');
 
+const hostName = mailer.emailSmtpHost || "smtpout.secureserver.net";
+const mailPort = mailer.emailPort || 465; 
+const mailSecure = mailPort === 465; 
+const userEmail = mailer.userEmail;
+const userPassword = mailer.userPassword;
 
-/**
- * Sends an email with the specified subject, recipient, and message.
- *
- * @param {string} subject - The subject of the email.
- * @param {string} to - The recipient's email address.
- * @param {string} message - The body of the email message.
- * @returns {Promise<Object>} A promise that resolves to the information about the sent email.
- * @throws {Error} Throws an error if the email fails to send.
- */
 class Email {
 	constructor() {
-		this.transporter = nodemailer.createTransport({});
+		this.transporter = nodemailer.createTransport({
+			host: hostName,
+			port: mailPort,
+			secure: mailSecure,
+			auth: {
+				user: userEmail,
+				pass: userPassword
+			}
+		});
 	}
 
-	async sendMail(subject, to, message) {
-		try {
+	async sendMail(to, subject, message, from = userEmail) {
+		try
+		{
 			const info = await this.transporter.sendMail({
-				from: '',
-				subject: subject,
-				to: to,
-				message,
+				from,
+				to,
+				subject,
+				text: message,
+				html: `<p>${message}</p>`
 			});
 			return info;
-		} catch (err) {
-			console.error(err);
+		} catch (err)
+		{
+			console.error("Email sending error:", err);
+			throw new Error("Failed to send email.");
 		}
+	}
+
+	async contactFormMail(data) {
+		const { email, subject, message } = data;
+		if (!email || !message)
+		{
+			throw new Error("Email and message are required!");
+		}
+		const to = "info@womensafehouse.org";
+		await this.sendMail(to, subject || "New Contact Form Mail", message, email);
 	}
 }
 
