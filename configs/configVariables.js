@@ -20,7 +20,6 @@ module.exports = {
 	mailer: {
 		emailSmtpHost: process.env.MAILER_HOST,
 		emailPort: process.env.MAILER_PORT,
-		secure: process.env.MAIL_SECURE_PORT,
 		userEmail: process.env.MAILER_EMAIL,
 		userPassword:process.env.MAILER_EMAIL_PASSWORD
 	}
