@@ -17,5 +17,12 @@ module.exports = {
 		encrypt: process.env.FLW_ENCRYPTION_KEY,
 		redirect: process.env.FLW_REDIRECT_URL
 	},
-	
+	mailer: {
+		emailSmtpHost: process.env.MAILER_HOST,
+		emailPort: process.env.MAILER_PORT,
+		secure: process.env.MAIL_SECURE_PORT,
+		userEmail: process.env.MAILER_EMAIL,
+		userPassword:process.env.MAILER_EMAIL_PASSWORD
+	}
+
 };
