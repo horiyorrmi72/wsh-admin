@@ -1,10 +1,13 @@
 const flutterwave = require('flutterwave-node-v3');
 const crypto = require("crypto");
 const { default: axios } = require('axios');
+const Email = require('../../utils/mail/mailer')
 const { publicKey, secretKey, redirect, } =
 	require('../../configs/configVariables').flwConfigs;
 // console.log("secretKey:", secretKey);
 const flw = new flutterwave(publicKey, secretKey);
+
+const emailService = new Email();
 
 
 /**
@@ -31,10 +34,9 @@ const paymentWebhook = async (req, res) => {
 	try
 	{
 		const signature = req.headers["verif-hash"];
-		const webhookSecret = process.env.FLUTTERWAVE_WEBHOOK_SECRET
+		const webhookSecret = process.env.FLUTTERWAVE_WEBHOOK_SECRET;
 
-		const hash = crypto.createHash("sha256").update(webhookSecret).digest("hex");
-		if (!signature || signature !== hash)
+		if (!signature || signature !== webhookSecret)
 		{
 			console.warn("Unauthorized webhook access detected.");
 			return res.status(403).json({ message: "Invalid signature" });
@@ -43,23 +45,47 @@ const paymentWebhook = async (req, res) => {
 		const event = req.body;
 		console.log("Flutterwave Webhook Received:", event);
 
-		//successful payments
 		if (event.event === "charge.completed" && event.data.status === "successful")
 		{
 			const transactionId = event.data.id;
 			const txRef = event.data.tx_ref;
 
-			// verify the payment
 			const verified = await flw.Transaction.verify({ id: transactionId });
 
 			if (verified.status === "success" && verified.data.status === "successful")
 			{
+				const productObj = {
+					transaction_reference: verified.data.tx_ref,
+					amount: verified.data.amount,
+					buyers_name: verified.data.customer.fullName || "Unknown",
+					clothSize: verified.data.customer.size || "N/A",
+					clothType: verified.data.customer.clothType || "N/A",
+					quantity: verified.data.customer.productQuantity || 1
+				};
+
+				const constructMessageProp = (productObj) => {
+					return `<div>
+                        <h2>A New Safe House Transaction</h2>
+                        <p>Transaction Reference: ${productObj.transaction_reference}</p>
+                        <p>Amount: ${productObj.amount}</p>
+                        <p>Buyer: ${productObj.buyers_name}</p>
+                        <p>Size: ${productObj.clothSize}</p>
+                        <p>Type: ${productObj.clothType}</p>
+                        <p>Quantity: ${productObj.quantity}</p>
+                    </div>`;
+				};
+
+				await emailService.sendMail(
+					'info@womensafehouse.org',
+					'Women Safe House Shirt Sales',
+					constructMessageProp(productObj)
+				);
+
 				console.log(`Payment verified: ${txRef}`);
 				return res.status(200).json({ success: true, message: "Payment verified" });
 			}
 		}
 
-		//response for failed transactions
 		return res.status(200).json({ success: false, message: "Payment not successful" });
 	} catch (error)
 	{
@@ -70,63 +96,69 @@ const paymentWebhook = async (req, res) => {
 
 
 /**
- * Handles the initiation of payments by sending a request to the Flutterwave API.
+ * Initiates a payment for a t-shirt purchase using Flutterwave API.
  *
  * @async
  * @function initiatePayments
  * @param {Object} req - The HTTP request object.
- * @param {Object} req.body - The body of the request containing payment details.
- * @param {string} req.body.email - The email address of the customer.
+ * @param {Object} req.body - The request body containing the payment details.
+ * @param {string} req.body.email - The email of the customer.
  * @param {number} req.body.amount - The amount to be paid.
- * @param {string} req.body.size - The size of the product being purchased.
- * @param {string} req.body.clothType - The type of cloth being purchased.
- * @param {number} req.body.productQuantity - The quantity of the product being purchased.
+ * @param {string} req.body.size - The size of the t-shirt.
+ * @param {string} req.body.clothType - The type of the t-shirt.
+ * @param {number} req.body.productQuantity - The quantity of the t-shirt.
+ * @param {string} req.body.fullName - The full name of the customer.
+ * @param {string} req.body.address - The address of the customer.
+ * @param {string} req.body.phone - The phone number of the customer.
  * @param {Object} res - The HTTP response object.
- * @returns {Promise<void>} Sends a JSON response with the payment status and link on success.
- * @throws Will log errors to the console if the request to the Flutterwave API fails.
+ * @returns {Promise<void>} Sends a JSON response with the payment status and link.
+ *
+ * @throws {Error} If an error occurs during the payment process.
  */
 const initiatePayments = async (req, res) => {
 
-	const { email, amount, size, clothType, productQuantity } = req.body;
-	const now = Date.now();
-	const tx_ref = `Tshirt_${clothType}-${now}`;
-	const redirectLink = redirect;
-	console.log(redirectLink);
-	try
-	{
-		const response = await axios.post(
-			'https://api.flutterwave.com/v3/payments',
-			{
-				tx_ref,
-				amount,
-				currency: 'NGN',
-				redirect_url: redirect,
-				customer: {
-					email: email,
-					name: email,
-					size,
-					clothType,
-					productQuantity
-				},
-				customizations: {
-					title: 'horla_techs',
-				},
-			},
-			{
-				headers: {
-					Authorization: `Bearer ${secretKey}`,
-					'Content-Type': 'application/json',
-				},
-			}
-		);
-		const { status, data: { link } = {} } = response.data;
-		return res.status(200).json({ data: { status, link } });
+    const { email, amount, size, clothType, productQuantity, fullName, address, phone } = req.body;
+    const now = Date.now();
+    const tx_ref = `Tshirt_${clothType}-${now}`;
+    const redirectLink = redirect;
+    console.log(redirectLink);
+    try
+    {
+        const response = await axios.post(
+            'https://api.flutterwave.com/v3/payments',
+            {
+                tx_ref,
+                amount,
+                currency: 'NGN',
+                redirect_url: redirect,
+                customer: {
+                    email: email,
+                    name: fullName,
+                    address,
+                    phone,
+                    size,
+                    clothType,
+                    productQuantity
+                },
+                customizations: {
+                    title: 'Women Safe House Initiative',
+                },
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${secretKey}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+        const { status, data: { link } = {} } = response.data;
+        return res.status(200).json({ data: { status, link } });
 
-	} catch (err)
-	{
-		console.error(err.code);
-		console.error(err?.response?.data);
-	}
+    } catch (err)
+    {
+        console.error(err.code);
+        console.error(err?.response?.data);
+    }
 };
 
 
@@ -178,24 +210,24 @@ const verifyPayment = async (id) => {
  *
  * @throws {Error} If an unexpected error occurs during verification.
  */
+
+
 const verify = async (req, res) => {
 	const { data } = req.body;
-
-
-	try
-	{
-		if (!data?.id)
-		{
-			return res.status(400).json({ message: "Invalid request!🚨" });
+	try {
+		if (!data || !data.id) {
+			return res
+				.status(400)
+				.json({ message: 'Invalid request! Transaction ID is required.' });
 		}
+
 		const transactionId = data.id;
 		const verified = await verifyPayment(transactionId);
 		const transaction = verified?.data || verified;
 
-		if (transaction?.status === "success")
-		{
+		if (transaction?.status === 'success') {
 			return res.status(200).json({
-				message: "Payment Successful.",
+				message: 'Payment Successful.',
 				transactionId: transaction?.id,
 				amount: transaction?.amount,
 				currency: transaction?.currency,
@@ -203,19 +235,25 @@ const verify = async (req, res) => {
 			});
 		}
 
-		return res.status(409).json({message: `Payment ${transaction?.status || "failed"}`,transactionId: transaction?.id});
-	} catch (error)
-	{
-		const errorMessage = error?.message || "Payment Verification Failed.";
+		return res
+			.status(409)
+			.json({
+				message: `Payment ${transaction?.status || 'failed'}`,
+				transactionId: transaction?.id,
+			});
+	} catch (error) {
+		const errorMessage = error?.message || 'Payment Verification Failed.';
 
-		if (errorMessage.includes("Transaction does not exist") || error?.statusCode === 400)
-		{
-			return res.status(400).json({ message: "Invalid Transaction ID" });
+		if (
+			errorMessage.includes('Transaction does not exist') ||
+			error?.statusCode === 400
+		) {
+			return res.status(400).json({ message: 'Invalid Transaction ID' });
 		}
 
-		console.error("Verification Error:", error);
+		console.error('Verification Error:', error);
 		return res.status(500).json({
-			message: "Internal Server Error, please try later.",
+			message: 'Internal Server Error, please try later.',
 			error: errorMessage,
 		});
 	}

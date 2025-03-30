@@ -4,7 +4,7 @@ const mailer = require('./mailController');
 
 
 
-router.get('/contact-mail', mailer.receiveMail);
+router.post('/contact-mail', mailer.receiveMail);
 
 
 module.exports = router;
