@@ -2,8 +2,8 @@ const nodemailer = require('nodemailer');
 const { mailer } = require('../../configs/configVariables');
 
 const hostName = mailer.emailSmtpHost || "smtpout.secureserver.net";
-const mailPort = mailer.emailPort || 465; 
-const mailSecure = mailPort === 465; 
+const mailPort = mailer.emailPort || 465;
+const mailSecure = mailPort === 465;
 const userEmail = mailer.userEmail;
 const userPassword = mailer.userPassword;
 
@@ -39,7 +39,7 @@ class Email {
 	}
 
 	async contactFormMail(data) {
-		const { email, subject, message } = data;
+		const { email, subject, message, name } = data;
 		if (!email || !message)
 		{
 			throw new Error("Email and message are required!");

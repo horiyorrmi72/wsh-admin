@@ -7,14 +7,14 @@ const emailService = new Email();
 const receiveMail = async (req, res) => {
     try
     {
-        const { email,subject, message } = req.body;
+        const { name, email, subject, message } = req.body;
 
         if (!email || !message)
         {
             return res.status(400).json({ error: 'Email and message are required.' });
         }
 
-        await emailService.contactFormMail({ email,name, subject, message,  });
+        await emailService.contactFormMail({ email, name, subject, message, });
 
         return res.status(200).json({ success: true, message: 'Contact form email sent successfully.' });
     } catch (error)
